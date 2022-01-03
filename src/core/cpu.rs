@@ -184,12 +184,27 @@ const SBC_ABS_X: u8 = 0xFD;
 const INC_ABS_X: u8 = 0xFE;
 
 struct CPU {
-    pc: u8,
+    pc: u16,
     reg_a: u8,
     reg_b: u8,
     reg_x: u8,
     reg_y: u8,
+
+    /**
+     * Flags layout
+     * N V _ B D I Z C
+     *
+     * N = negative
+     * V = overflow
+     * B = break
+     * D = decimal
+     * I = interrupt disable
+     * Z = zero
+     * C = carry
+     */
     flags: u8,
+
+    stack_pointer: u8
 }
 
 pub fn run(program: Vec<u8>) -> Vec<u8> {
@@ -201,7 +216,8 @@ pub fn run(program: Vec<u8>) -> Vec<u8> {
         reg_b: 0x0,
         reg_x: 0x0,
         reg_y: 0x0,
-        flags: 0b00000000,
+        flags: 0b000000,
+        stack_pointer: 0x0,
     };
 
     let mut running = true;
@@ -210,54 +226,222 @@ pub fn run(program: Vec<u8>) -> Vec<u8> {
         let instr: u8 = program[cpu.pc as usize];
 
         match instr {
-            // 0x0X
+
+            // ADC
+            ADC_X_IMPL => {},
+            ADC_ZPG => {},
+            ADC_IMM => {},
+            ADC_ABS => {},
+            ADC_IND_Y => {},
+            ADC_ZPG_X => {},
+            ADC_ABS_Y => {},
+            ADC_ABS_X => {},
+
+            // AND
+            AND_ABS => {},
+            AND_ABS_X => {},
+            AND_ABS_Y => {},
+            AND_IMM => {},
+            AND_IND_Y => {},
+            AND_X_IND => {}
+            AND_ZPG => {},
+            AND_ZPG_X => {},
+
+            // ASL
+            ASL_ABS => {},
+            ASL_ABS_X => {},
+            ASL_ACC => {},
+            ASL_ZPG => {},
+            ASL_ZPG_X => {},
+
+            // BRK
             BRK_IMPL => {
+                cpu.push_stack(cpu.pc + 2);
                 println!("BRK_IMPL");
             }
-            ORA_X_IND => { println!("ORA_X_IND"); }
-            ORA_ZPG => { println!("ORA_ZPG"); }
-            ASL_ZPG => { println!("ASL_ZPG"); }
-            PHP_IMPL => { println!("PHP_IMPL"); }
-            ORA_IMM => { println!("ORA_IMM"); }
-            ASL_ACC => { println!("ASL_ACC"); }
-            ORA_ABS => { println!("ORA_ABS"); }
-            ASL_ABS => { println!("ASL_ABS"); }
+
+            // EOR
+            EOR_X_IND => {}
+            EOR_ZPG => {},
+            EOR_IMM => {},
+            EOR_ABS => {},
+            EOR_IND_Y => {},
+            EOR_ZPG_X => {},
+            EOR_ABS_Y => {},
+            EOR_ABS_X => {},
+
+            // LDA
+            LDA_ABS => {},
+            LDA_ABS_Y => {},
+            LDA_ABS_X => {},
+            LDA_IMM => {},
+            LDA_IND_Y => {},
+            LDA_X_IND => {},
+            LDA_ZPG => {},
+            LDA_ZPG_X => {},
+
+            // LDX
+            LDX_ABS => {},
+            LDX_ABS_Y => {},
+            LDX_IMM => {},
+            LDX_ZPG => {},
+            LDX_ZPG_Y => {},
+
+            // LDY
+            LDY_IMM => {},
+            LDY_ZPG => {},
+            LDY_ABS => {},
+            LDY_ZPG_X => {},
+            LDY_ABS_X => {},
+
+            // LSR
+            LSR_A => {},
+            LSR_ABS => {},
+            LSR_ZPG => {},
+            LSR_ZPG_X => {},
+            LSR_ABS_X => {},
+
+            // ORA
+            ORA_X_IND => {},
+            ORA_ZPG => {},
+            ORA_IMM => {},
+            ORA_ABS => {},
+            ORA_IND => {},
+            ORA_ZPG_X => {},
+            ORA_ABS_Y => {},
+            ORA_ABS_X => {},
+
+            // ROL
+            ROL_A => {},
+            ROL_ABS => {},
+            ROL_ABS_X => {},
+            ROL_ZPG_X => {},
+            ROL_ZPG => {},
+
+            // ROR
+            ROR_A => {},
+            ROR_ABS => {},
+            ROR_ZPG_X => {},
+            ROR_ABS_X => {},
+            ROR_ZPG => {},
+
+            // STA
+            STA_X_IND => {},
+            STA_ZPG => {},
+            STA_ABS => {},
+            STA_IND_Y => {},
+            STA_ZPG_X => {},
+            STA_ABS_Y => {},
+
+            // STX
+            STX_ABS => {},
+            STX_ZPG => {},
+            STX_ZPG_Y => {},
+
+            // STY
+            STY_ABS => {},
+            STY_ZPG => {},
+            STY_ZPG_X => {},
+
+            // 0x0X
+            PHP_IMPL => {},
 
             // 0x1X
-            BPL_REL => { println!("BPL_REL"); }
-            ORA_IND => { println!("ORA_IND"); }
-            ORA_ZPG_X => { println!("ORA_ZPG_X"); }
-            ASL_ZPG_X => { println!("ASL_ZPG_X"); }
-            CLC_IMP => { println!("CLC_IMP"); }
-            ORA_ABS_Y => { println!("ORA_ABS_Y"); }
-            ORA_ABS_X => { println!("ORA_ABS_X"); }
-            ASL_ABS_X => { println!("ASL_ABS_X"); }
+            BPL_REL => {},
+            CLC_IMP => {},
 
             // 0x2X
-            JSR_ABS => { println!("JSR_ABS"); }
-            AND_X_IND => { println!("AND_X_IND"); }
-            BIT_ZPG => { println!("BIT_ZPG"); }
-            AND_ZPG => { println!("AND_ZPG"); }
-            ROL_ZPG => { println!("ROL_ZPG"); }
-            PLP_IMPL => { println!("PLP_IMPL"); }
-            AND_IMM => { println!("AND_IMM"); }
-            ROL_A => { println!("ROL_A"); }
-            BIT_ABS => { println!("BIT_ABS"); }
-            AND_ABS => { println!("AND_ABS"); }
-            ROL_ABS => { println!("ROL_ABS"); }
+            JSR_ABS => {},
+            BIT_ZPG => {},
+            PLP_IMPL => {},
+            BIT_ABS => {},
+
+            // 0x3X
+            BMI_REL => {},
+            SEC_IMPL => {},
+
+            // 0x4X
+            RTI_IMPL => {},
+            PHA_IMPL => {},
+            JMP_ABS => {},
+
+            // 0x5X
+            BVC_REL => {},
+            CLI_IMPL => {},
+
+            // 0x6X
+            RTS_IMPL => {},
+            PLA_IMPL => {},
+            JMP_IND => {},
+
+            // 0x7X
+            BVS_REL => {},
+            SEI_IMPL => {},
+
+            // 0x8X
+            DEY_IMPL => {},
+            TXA_IMPL => {},
+
+            // 0x9X
+            BCC_REL => {},
+            TYA_IMPL => {},
+            TXS_IMPL => {},
+            STA_ABS_X => {},
 
             // 0xAX
-            LDY_IMM => { println!("LDY_IMM"); }
-            LDY_ZPG => { println!("LDY_ZPG"); }
-            LDY_ABS => { println!("LDY_ABS"); }
+            TAY_IMPL => {},
+            TAX_IMPL => {},
 
             // 0xBX
-            LDY_X => { println!("LDY_X"); }
-            LDY_X_ZPG => { println!("LDY_X_ZPG"); }
-            LDY_IMM => { println!("LDY_IMM"); }
+            BCS_REL => {},
+            CLV_IMPL => {},
+            TSX_IMPL => {},
 
-            //0x8X
-            STA_ABS => { println!("STA_ABS"); }
+            // 0xCX
+            CPY_IMM => {},
+            CMP_X_IND => {},
+            CPY_ZPG => {},
+            CMP_ZPG => {},
+            DEC_ZPG => {},
+            INY_IMPL => {},
+            CMP_IMM => {},
+            DEX_IMPL => {},
+            CPY_ABS => {},
+            CMP_ABS => {},
+            DEC_ABS => {},
+
+            // 0xDX
+            BNE_REL => {},
+            CMP_IND_Y => {},
+            CMP_ZPG_X => {},
+            DEC_ZPG_X => {},
+            CLD_IMPL => {},
+            CMP_ABS_Y => {},
+            CMP_ABS_X => {},
+            DEC_ABS_X => {},
+
+            // 0xEX
+            CPX_IMM => {},
+            SBC_X_IND => {},
+            CPX_ZPG => {},
+            SBC_ZPG => {},
+            INC_ZPG => {},
+            INX_IMPL => {},
+            SBC_IMM => {},
+            NOP_IMPL => {},
+            CPX_ABS => {},
+            SBC_ABS => {},
+            INC_ABS => {},
+
+            // 0xFX
+            BEQ_REL => {},
+            SBC_IND_Y => {},
+            SBC_ZPG_X => {},
+            INC_ZPG_X => {},
+            SED_IMPL => {},
+            SBC_ABS_Y => {},
+            SBC_ABS_X => {},
+            INC_ABS_X => {},
             _ => println!("({:x}) Missing instruction", instr),
         }
 
