@@ -7,7 +7,11 @@ pub struct ROM {
     pub header: Vec<u8>,
     pub trainer: Vec<u8>,
     pub program: Vec<u8>,
-    pub chr: Vec<u8>
+    pub chr: Vec<u8>,
+    pub mirroring_vertical: bool,
+    pub has_battery_backed_prg_ram: bool,
+    pub has_trainer: bool,
+    pub has_four_screen_vram: bool
 }
 
 #[derive(Debug)]
@@ -48,8 +52,15 @@ pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
         return Err(FormatParseError::new("Not NES format file."));
     }
 
+    // Parse flags 6
+    let flags_6 = header[6];
+    let mirroring_vertical = flags_6 & 0b00000001 > 0;
+    let has_battery_backed_prg_ram = flags_6 & 0b00000010 > 0;
+    let has_trainer = flags_6 & 0b00000100 > 0;
+    let has_four_screen_vram = flags_6 & 0b00001000 > 0;
+
     // 0 or 512 bytes trainer
-    let trainer_size = if true { 0 } else { 0x200 };
+    let trainer_size = if has_trainer { 0 } else { 0x200 };
     let trainer_byte_range = 0x10..(0x10 + trainer_size);
     let trainer = bytes[trainer_byte_range.clone()].to_vec();
 
@@ -67,7 +78,7 @@ pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
         header,
         chr,
         program,
-        trainer
+        trainer,
     };
 
     return Ok(rom);
