@@ -16,3 +16,6 @@ pub fn print_bytes_table(bytes: Vec<u8>, start: usize, end: usize, chunk_size: u
     }
 }
 
+pub fn disassemble(bytes: Vec<u8>, start: usize, end: usize) {
+    //  print("{}");
+}

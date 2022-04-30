@@ -1,5 +1,3 @@
-use crate::debug;
-
 // 0x0X
 const BRK_IMPL: u8 = 0x00;
 const ORA_X_IND: u8 = 0x01;
@@ -68,7 +66,7 @@ const LSR_ABS_X: u8 = 0x5E;
 
 // 0x6X
 const RTS_IMPL: u8 = 0x60;
-const ADC_X_IMPL: u8 = 0x61;
+const ADC_X_IND: u8 = 0x61;
 const ADC_ZPG: u8 = 0x65;
 const ROR_ZPG: u8 = 0x66;
 const PLA_IMPL: u8 = 0x68;
@@ -183,60 +181,114 @@ const SBC_ABS_Y: u8 = 0xF9;
 const SBC_ABS_X: u8 = 0xFD;
 const INC_ABS_X: u8 = 0xFE;
 
-struct CPU {
+const Z_PAGE_BEGIN: u8 = 0x0;
+const Z_PAGE_END: u8 = 0xFF;
+const Z_PAGE_SIZE: u8 = Z_PAGE_END - Z_PAGE_BEGIN;
+
+struct Instruction {
+    name: String,
+    opcode: u8,
+    addr_mod: u8,
+    cycles: u8,
+}
+
+#[derive(Default)]
+pub struct CPU {
     pc: u16,
-    reg_a: u8,
-    reg_b: u8,
-    reg_x: u8,
-    reg_y: u8,
+    ac: u8,
+    x: u8,
+    y: u8,
+    cycles: u32,
 
-    /**
-     * Flags layout
-     * N V _ B D I Z C
-     *
-     * N = negative
-     * V = overflow
-     * B = break
-     * D = decimal
-     * I = interrupt disable
-     * Z = zero
-     * C = carry
-     */
-    flags: u8,
-
+    /// Status register, most commonly used flags are C, Z, V, S.
+    /// 
+    /// - N/S = negative/sign
+    /// - V = overflow
+    /// - U = (signed variables, unused)
+    /// - B = break
+    /// - D = decimal
+    /// - I = interrupt disable
+    /// - Z = zero
+    /// - C = carry
+    status_register: u8,
     stack_pointer: u8
 }
 
-pub fn run(program: Vec<u8>) -> Vec<u8> {
-    let mut memory: Vec<u8> = vec![0; 0xffff as usize];
+impl CPU {
+    pub fn new() -> CPU {
+        CPU { 
+            pc: 0x0000, 
+            ac: 0x00, 
+            x: 0x00, 
+            y: 0x00, 
+            cycles: 0, 
+            status_register: 0b00000000, 
+            stack_pointer: 0x00 
+        }
+    }
 
-    let mut cpu = CPU {
-        pc: 0x0,
-        reg_a: 0x0,
-        reg_b: 0x0,
-        reg_x: 0x0,
-        reg_y: 0x0,
-        flags: 0b000000,
-        stack_pointer: 0x0,
-    };
+    pub fn reset (&mut self) {
+        self.pc = 0x0000;
+        self.ac = 0x00;
+        self.x = 0x00;
+        self.y = 0x00;
+        self.status_register = 0b00000000;
+        self.stack_pointer = 0x00;
+        self.cycles = 0;
+    }
 
-    let mut running = true;
+    pub fn execute_one(&mut self, prg: Vec<u8>, ram: &mut Vec<u8>) {
+        // Why is it illegal to index a vec of u8 with a u16? 
+        // Why wouldn't it be possible to have a vec of a length that exceeds u16?
+        
+        // A usize is 4 bytes on a 32-bit machine, and 8 bytes on a 64-bit machine
+        // 4 bytes = 32 bits, 2^32 =              4,294,967,296 =~ 4 GB of RAM
+        // 8 bytes = 64 bits, 2^64 = 18,446,744,073,709,551,616 =~ lost of RAM
 
-    while ((cpu.pc as usize) < program.len()) && running {
-        let instr: u8 = program[cpu.pc as usize];
+        // So, casting a u8 (8 bits) or a u16 (16 bits) to usize (32 or 64 bits) should be safe
+
+        let instr: u8 = prg[self.pc as usize];
+        let pc: usize = (self.pc + 1) as usize;
 
         match instr {
+            // ADD WITH CARRY
+            ADC_X_IND => {
+                let address = prg[pc + 1];
+                let value = prg[address as usize];
+                let carry = self.status_register & 0b0010000 >> 5;
 
-            // ADC
-            ADC_X_IMPL => {},
-            ADC_ZPG => {},
-            ADC_IMM => {},
+                self.ac = self.x + carry;
+    
+                if self.ac > 0xFF {
+                    self.status_register |= 0b0010000;
+                }
+
+                self.cycles += 6;
+                self.pc += 2;
+            }
+            ADC_ZPG => {
+                let address = prg[pc + 1] % Z_PAGE_SIZE;
+                let value = ram[(Z_PAGE_BEGIN + address) as usize];
+                let carry = self.status_register & 0b0010000 >> 5;
+
+                self.ac = value + self.x;
+                
+                if self.ac > 0xFF {
+                    self.status_register |= 0b0010000;
+                }
+
+                self.cycles += 3;
+                self.pc += 2;
+            },
+            ADC_IMM => {
+                let address = prg[pc + 1];
+            },
             ADC_ABS => {},
             ADC_IND_Y => {},
             ADC_ZPG_X => {},
             ADC_ABS_Y => {},
             ADC_ABS_X => {},
-
+    
             // AND
             AND_ABS => {},
             AND_ABS_X => {},
@@ -246,21 +298,69 @@ pub fn run(program: Vec<u8>) -> Vec<u8> {
             AND_X_IND => {}
             AND_ZPG => {},
             AND_ZPG_X => {},
-
-            // ASL
+    
+            // ARITHMETIC SHIFT LEFT
             ASL_ABS => {},
             ASL_ABS_X => {},
             ASL_ACC => {},
             ASL_ZPG => {},
             ASL_ZPG_X => {},
-
-            // BRK
+    
+            // BIT
+            BIT_ZPG => {},
+            BIT_ABS => {},
+    
+            // BRANCH
+            // add 1 to cycles if branch occurs on same page   
+            // add 2 to cycles if branch occurs to different page
+            BCC_REL => {},
+            BCS_REL => {},
+            BEQ_REL => {},
+            BMI_REL => {},
+            BNE_REL => {},
+            BPL_REL => {},
+            BVS_REL => {},
+            BVC_REL => {},
+    
+            // BREAK / INTERRUPT
             BRK_IMPL => {
-                cpu.push_stack(cpu.pc + 2);
-                println!("BRK_IMPL");
+                ram[self.stack_pointer as usize] = (self.pc + 2) as u8;
+                self.stack_pointer + 1;
             }
-
-            // EOR
+    
+            // CLEAR
+            CLC_IMP => {},
+            CLD_IMPL => {},
+            CLI_IMPL => {},
+            CLV_IMPL => {},
+    
+            // COMPARE
+            CMP_ABS => {},
+            CMP_IMM => {},
+            CMP_ZPG => {},
+            CMP_ABS_X => {},
+            CMP_ABS_Y => {},
+            CMP_IND_Y => {},
+            CMP_X_IND => {},
+            CMP_ZPG_X => {},
+    
+            CPX_IMM => {},
+            CPX_ZPG => {},
+            CPX_ABS => {},
+    
+            CPY_IMM => {},
+            CPY_ZPG => {},
+            CPY_ABS => {},
+    
+            // DECREMENT
+            DEC_ZPG => {},
+            DEC_ABS => {},
+            DEC_ZPG_X => {},
+            DEC_ABS_X => {},
+            DEY_IMPL => {},
+            DEX_IMPL => {},
+    
+            // EXCLUSIVE OR
             EOR_X_IND => {}
             EOR_ZPG => {},
             EOR_IMM => {},
@@ -269,8 +369,23 @@ pub fn run(program: Vec<u8>) -> Vec<u8> {
             EOR_ZPG_X => {},
             EOR_ABS_Y => {},
             EOR_ABS_X => {},
-
-            // LDA
+    
+            // INCREMENT
+            INC_ZPG => {},
+            INC_ABS => {},
+            INC_ZPG_X => {},
+            INC_ABS_X => {},
+            INX_IMPL => {},
+            INY_IMPL => {},
+    
+            // JUMP
+            JMP_ABS => {},
+            JMP_IND => {},
+    
+            // JUMP SUBROUTINE
+            JSR_ABS => {},
+    
+            // LOAD ACCUMULATOR
             LDA_ABS => {},
             LDA_ABS_Y => {},
             LDA_ABS_X => {},
@@ -279,29 +394,29 @@ pub fn run(program: Vec<u8>) -> Vec<u8> {
             LDA_X_IND => {},
             LDA_ZPG => {},
             LDA_ZPG_X => {},
-
-            // LDX
+    
+            // LOAD X
             LDX_ABS => {},
             LDX_ABS_Y => {},
             LDX_IMM => {},
             LDX_ZPG => {},
             LDX_ZPG_Y => {},
-
-            // LDY
+    
+            // LOAD Y
             LDY_IMM => {},
             LDY_ZPG => {},
             LDY_ABS => {},
             LDY_ZPG_X => {},
             LDY_ABS_X => {},
-
-            // LSR
+    
+            // LOGICAL SHIFT RIGHT
             LSR_A => {},
             LSR_ABS => {},
             LSR_ZPG => {},
             LSR_ZPG_X => {},
             LSR_ABS_X => {},
-
-            // ORA
+    
+            // OR WITH ACCUMULATOR
             ORA_X_IND => {},
             ORA_ZPG => {},
             ORA_IMM => {},
@@ -310,143 +425,98 @@ pub fn run(program: Vec<u8>) -> Vec<u8> {
             ORA_ZPG_X => {},
             ORA_ABS_Y => {},
             ORA_ABS_X => {},
-
-            // ROL
+    
+            // ROTATE LEFT
             ROL_A => {},
             ROL_ABS => {},
             ROL_ABS_X => {},
             ROL_ZPG_X => {},
             ROL_ZPG => {},
-
-            // ROR
+    
+            // ROTATE RIGHT
             ROR_A => {},
             ROR_ABS => {},
             ROR_ZPG_X => {},
             ROR_ABS_X => {},
             ROR_ZPG => {},
-
+    
+            // PUSH
+            PHA_IMPL => {},
+            PHP_IMPL => {},
+    
+            // PULL
+            PLA_IMPL => {},
+            PLP_IMPL => {},
+    
+            // RETURN
+            RTI_IMPL => {},
+            RTS_IMPL => {},
+    
+            // SUBTRACT WITH CARRY
+            SBC_X_IND => {},
+            SBC_ZPG => {},
+            SBC_IMM => {},
+            SBC_ABS => {},
+            SBC_IND_Y => {},
+            SBC_ZPG_X => {},
+            SBC_ABS_Y => {},
+            SBC_ABS_X => {},
+    
+            // SET
+            SEC_IMPL => {},
+            SED_IMPL => {},
+            SEI_IMPL => {},
+    
             // STA
-            STA_X_IND => {},
-            STA_ZPG => {},
             STA_ABS => {},
+            STA_ABS_X => {},
+            STA_ABS_Y => {},
+            STA_X_IND => {},
             STA_IND_Y => {},
             STA_ZPG_X => {},
-            STA_ABS_Y => {},
-
+            STA_ZPG => {},
+    
             // STX
             STX_ABS => {},
             STX_ZPG => {},
             STX_ZPG_Y => {},
-
+    
             // STY
             STY_ABS => {},
             STY_ZPG => {},
             STY_ZPG_X => {},
-
-            // 0x0X
-            PHP_IMPL => {},
-
-            // 0x1X
-            BPL_REL => {},
-            CLC_IMP => {},
-
-            // 0x2X
-            JSR_ABS => {},
-            BIT_ZPG => {},
-            PLP_IMPL => {},
-            BIT_ABS => {},
-
-            // 0x3X
-            BMI_REL => {},
-            SEC_IMPL => {},
-
-            // 0x4X
-            RTI_IMPL => {},
-            PHA_IMPL => {},
-            JMP_ABS => {},
-
-            // 0x5X
-            BVC_REL => {},
-            CLI_IMPL => {},
-
-            // 0x6X
-            RTS_IMPL => {},
-            PLA_IMPL => {},
-            JMP_IND => {},
-
-            // 0x7X
-            BVS_REL => {},
-            SEI_IMPL => {},
-
-            // 0x8X
-            DEY_IMPL => {},
+    
+            // TRANSFER
             TXA_IMPL => {},
-
-            // 0x9X
-            BCC_REL => {},
             TYA_IMPL => {},
             TXS_IMPL => {},
-            STA_ABS_X => {},
-
-            // 0xAX
             TAY_IMPL => {},
             TAX_IMPL => {},
-
-            // 0xBX
-            BCS_REL => {},
-            CLV_IMPL => {},
             TSX_IMPL => {},
-
-            // 0xCX
-            CPY_IMM => {},
-            CMP_X_IND => {},
-            CPY_ZPG => {},
-            CMP_ZPG => {},
-            DEC_ZPG => {},
-            INY_IMPL => {},
-            CMP_IMM => {},
-            DEX_IMPL => {},
-            CPY_ABS => {},
-            CMP_ABS => {},
-            DEC_ABS => {},
-
-            // 0xDX
-            BNE_REL => {},
-            CMP_IND_Y => {},
-            CMP_ZPG_X => {},
-            DEC_ZPG_X => {},
-            CLD_IMPL => {},
-            CMP_ABS_Y => {},
-            CMP_ABS_X => {},
-            DEC_ABS_X => {},
-
-            // 0xEX
-            CPX_IMM => {},
-            SBC_X_IND => {},
-            CPX_ZPG => {},
-            SBC_ZPG => {},
-            INC_ZPG => {},
-            INX_IMPL => {},
-            SBC_IMM => {},
+    
+            // NOP
             NOP_IMPL => {},
-            CPX_ABS => {},
-            SBC_ABS => {},
-            INC_ABS => {},
-
-            // 0xFX
-            BEQ_REL => {},
-            SBC_IND_Y => {},
-            SBC_ZPG_X => {},
-            INC_ZPG_X => {},
-            SED_IMPL => {},
-            SBC_ABS_Y => {},
-            SBC_ABS_X => {},
-            INC_ABS_X => {},
+    
             _ => println!("({:x}) Missing instruction", instr),
         }
-
-        cpu.pc += 1;
     }
+}
 
-    return memory;
+#[cfg(test)]
+mod tests {
+    use crate::core::cpu::CPU;
+
+    #[test]
+    fn it_works() {
+        let mut c = CPU::new();
+        let mut program = vec![0, 0xFF];
+
+        program[0x0000] = 0x00;
+        program[0x0001] = 0xAA;
+
+        let mut ram = vec![0, 0xFF];
+        c.execute_one(program, &mut ram);
+
+        assert_eq!(ram[0], 0x11);
+    }
 }

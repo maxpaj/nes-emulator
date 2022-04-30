@@ -8,9 +8,25 @@ pub struct ROM {
     pub trainer: Vec<u8>,
     pub program: Vec<u8>,
     pub chr: Vec<u8>,
+
+    /**
+     *  What is this used for? I don't remember
+     */
     pub mirroring_vertical: bool,
+
+    /**
+     *  What is this used for? I don't remember
+     */
     pub has_battery_backed_prg_ram: bool,
+
+    /**
+     *  What is this used for? I don't remember
+     */
     pub has_trainer: bool,
+
+    /**
+     *  What is this used for? I don't remember
+     */
     pub has_four_screen_vram: bool
 }
 
@@ -79,6 +95,10 @@ pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
         chr,
         program,
         trainer,
+        has_battery_backed_prg_ram: false,
+        has_four_screen_vram: false,
+        has_trainer: false,
+        mirroring_vertical: false
     };
 
     return Ok(rom);
