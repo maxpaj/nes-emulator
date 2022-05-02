@@ -201,15 +201,14 @@ pub struct CPU {
     cycles: u32,
 
     /// Status register, most commonly used flags are C, Z, V, S.
-    /// 
-    /// - N/S = negative/sign
-    /// - V = overflow
-    /// - U = (signed variables, unused)
-    /// - B = break
-    /// - D = decimal
-    /// - I = interrupt disable
-    /// - Z = zero
-    /// - C = carry
+    /// - N = Negative/sign
+    /// - V = Overflow
+    /// - _ = (unused)
+    /// - B = Break
+    /// - D = Decimal (use BCD for arithmetics)
+    /// - I = Interrupt (IRQ disable)
+    /// - Z = Zero
+    /// - C = Carry
     status_register: u8,
     stack_pointer: u8
 }
