@@ -239,54 +239,149 @@ impl CPU {
     pub fn execute_one(&mut self, prg: Vec<u8>, ram: &mut Vec<u8>) {
         // Why is it illegal to index a vec of u8 with a u16? 
         // Why wouldn't it be possible to have a vec of a length that exceeds u16?
-        
+        //
         // A usize is 4 bytes on a 32-bit machine, and 8 bytes on a 64-bit machine
         // 4 bytes = 32 bits, 2^32 =              4,294,967,296 =~ 4 GB of RAM
         // 8 bytes = 64 bits, 2^64 = 18,446,744,073,709,551,616 =~ lost of RAM
-
+        //
         // So, casting a u8 (8 bits) or a u16 (16 bits) to usize (32 or 64 bits) should be safe
-
         let instr: u8 = prg[self.pc as usize];
-        let pc: usize = (self.pc + 1) as usize;
+        let pc: usize = self.pc as usize;
 
+
+        // Addressing modes
+        // ------------------------
+        // Non-Indexed, non memory
+        //   - Accumulator 
+        //        Instructions have the accumulator register as it's target
+        //   - Immediate
+        //   - Implied
+        // Non-Indexed memory ops
+        //   - Relative
+        //   - Absolute
+        //   - Zero page 
+        //   - Indirect
+        // Indexed memory ops
+        //   - Absolute Indexed
+        //   - Zero-Page Indexed
+        //   - Indexed Indirect
+        //   - Indirect indexed
         match instr {
             // ADD WITH CARRY
             ADC_X_IND => {
-                let address = prg[pc + 1];
-                let value = prg[address as usize];
-                let carry = self.status_register & 0b0010000 >> 5;
-
-                self.ac = self.x + carry;
+                let inst_val = prg[pc + 1];
+                let calc_addr = self.x + inst_val;
+                let value = ram[calc_addr as usize];
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
     
-                if self.ac > 0xFF {
-                    self.status_register |= 0b0010000;
-                }
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
 
-                self.cycles += 6;
+                self.bytes_cycles += 6;
                 self.pc += 2;
             }
             ADC_ZPG => {
-                let address = prg[pc + 1] % Z_PAGE_SIZE;
-                let value = ram[(Z_PAGE_BEGIN + address) as usize];
-                let carry = self.status_register & 0b0010000 >> 5;
+                // Use the value from a relative address inside Z-page
+                let inst_val = prg[pc + 1];
+                let calc_addr = Z_PAGE_BEGIN as u8 + inst_val % Z_PAGE_SIZE as u8;
+                let value = ram[calc_addr as usize];
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
 
-                self.ac = value + self.x;
-                
-                if self.ac > 0xFF {
-                    self.status_register |= 0b0010000;
-                }
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
 
-                self.cycles += 3;
+                self.bytes_cycles += 3;
                 self.pc += 2;
             },
             ADC_IMM => {
-                let address = prg[pc + 1];
+                let inst_val = prg[pc + 1];
+                let value = inst_val;
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
+
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
+
+                self.bytes_cycles += 2;
+                self.pc += 2;
             },
-            ADC_ABS => {},
-            ADC_IND_Y => {},
-            ADC_ZPG_X => {},
-            ADC_ABS_Y => {},
-            ADC_ABS_X => {},
+            ADC_ABS => {
+                let inst_val = prg[pc + 1] + prg[pc + 2];
+                let calc_addr = inst_val;
+                let value = ram[calc_addr as usize];
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
+
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
+
+                self.bytes_cycles += 4;
+                self.pc += 3;
+            },
+            ADC_IND_Y => {
+                let inst_val = prg[pc + 1];
+                let calc_addr = self.y + inst_val;
+                let value = ram[calc_addr as usize];
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
+    
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
+
+                let page_crossed = 0;
+
+                self.bytes_cycles += 5 + page_crossed;
+                self.pc += 2;
+            },
+            ADC_ZPG_X => {
+                let inst_val = prg[pc + 1];
+                let calc_addr = Z_PAGE_BEGIN as u8 + inst_val % Z_PAGE_SIZE as u8 + self.x;
+                let value = ram[calc_addr as usize];
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
+
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
+
+                self.bytes_cycles += 4;
+                self.pc += 2;
+            },
+            ADC_ABS_Y => {
+                let inst_val = prg[pc + 1] + prg[pc + 2];
+                let calc_addr = inst_val + self.y;
+                let value = ram[calc_addr as usize];
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
+
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
+
+                self.bytes_cycles += 4;
+                self.pc += 3;
+            },
+            ADC_ABS_X => {
+                let inst_val = prg[pc + 1] + prg[pc + 2];
+                let calc_addr = inst_val + self.x;
+                let value = ram[calc_addr as usize];
+                let carry = self.status_register & 0b00000001;
+                let result: u16 = (value + carry).into();
+
+                self.ac = result as u8;
+                self.set_zero_flag(self.ac == 0);
+                self.set_overflow_flag(result > 0xFF);
+
+                self.bytes_cycles += 4;
+                self.pc += 3;
+            },
     
             // AND
             AND_ABS => {},
