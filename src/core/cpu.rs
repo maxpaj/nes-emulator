@@ -531,7 +531,10 @@ impl CPU {
             LDA_ZPG_X => {},
     
             // LOAD X
-            LDX_ABS => {},
+            LDX_ABS => {
+                let calc_addr = prg[pc + 1];
+                self.x = ram[calc_addr as usize];
+            },
             LDX_ABS_Y => {},
             LDX_IMM => {},
             LDX_ZPG => {},
