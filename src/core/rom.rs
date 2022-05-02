@@ -9,24 +9,24 @@ pub struct ROM {
     pub program: Vec<u8>,
     pub chr: Vec<u8>,
 
-    /**
-     *  What is this used for? I don't remember
-     */
+    ///
+    /// What is this used for?
+    ///
     pub mirroring_vertical: bool,
 
-    /**
-     *  What is this used for? I don't remember
-     */
+    ///
+    /// What is this used for?
+    ///
     pub has_battery_backed_prg_ram: bool,
 
-    /**
-     *  What is this used for? I don't remember
-     */
+    ///
+    /// What is this used for?
+    ///
     pub has_trainer: bool,
 
-    /**
-     *  What is this used for? I don't remember
-     */
+    ///
+    /// What is this used for?
+    ///
     pub has_four_screen_vram: bool
 }
 
