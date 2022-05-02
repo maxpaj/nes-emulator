@@ -181,6 +181,19 @@ const SBC_ABS_Y: u8 = 0xF9;
 const SBC_ABS_X: u8 = 0xFD;
 const INC_ABS_X: u8 = 0xFE;
 
+// MEMORY RANGES
+const Z_PAGE_BEGIN: usize = 0x0000;
+const Z_PAGE_END: usize = 0x00FF;
+const Z_PAGE_SIZE: usize = Z_PAGE_END - Z_PAGE_BEGIN;
+
+const STACK_BEGIN: usize = 0x0100;
+const STACK_END: usize = 0x01FF;
+const STACK_SIZE: usize = STACK_END - STACK_BEGIN;
+
+const GENERAL_PURPOSE_BEGIN: usize = 0x0200;
+const GENERAL_PURPOSE_END: usize = 0xFFFF;
+const GENERAL_PURPOSE_SIZE: usize = GENERAL_PURPOSE_END - GENERAL_PURPOSE_BEGIN;
+
 fn clear_bit(u: &mut u8, bit: u8, set: bool) {
     *u &= !(0b00000001 << bit);
 }
