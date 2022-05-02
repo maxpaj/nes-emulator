@@ -615,20 +615,53 @@ impl CPU {
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::core::cpu::CPU;
+mod cpu_tests {
+    use crate::core::cpu::{CPU, self};
+
+    use super::ORA_ABS;
 
     #[test]
-    fn it_works() {
+    fn test_status_flags_carry() {
         let mut c = CPU::new();
-        let mut program = vec![0, 0xFF];
+        c.status_register = 0b10000000;
+        c.set_carry_flag(true);
+        assert_eq!(c.status_register, 0b10000001);
 
-        program[0x0000] = 0x00;
-        program[0x0001] = 0xAA;
+        c.set_carry_flag(false);
+        assert_eq!(c.status_register, 0b10000000);
+    }
 
-        let mut ram = vec![0, 0xFF];
+    #[test]
+    fn test_status_flags_break() {
+        let mut c = CPU::new();
+        c.status_register = 0b10000000;
+        c.set_break_flag(true);
+        assert_eq!(c.status_register, 0b10010000);
+
+        c.set_break_flag(false);
+        assert_eq!(c.status_register, 0b10000000);
+    }
+
+    #[test]
+    fn test_brk_impl() {
+        let mut c = CPU::new();
+        let mut program = vec![0; 0xFF];
+        let mut ram = vec![0; 0xFFFF];
+        c.status_register = 0b00000000;
+
+        program[0x00] = cpu::BRK_IMPL;
         c.execute_one(program, &mut ram);
 
-        assert_eq!(ram[0], 0x11);
+        assert_eq!(c.status_register, 0b00010000);
+        assert_eq!(c.stack_pointer, 0xFE);
+    }
+
+    #[test]
+    fn test_ora_x_ind() {
+        let mut c = CPU::new();
+        let mut program = vec![0; 0xFF];
+        let mut ram = vec![0; 0xFFFF];
+
+        program[0x0000] = ORA_ABS;
     }
 }
