@@ -1,3 +1,5 @@
+use crate::libs::bit::toggle_bit;
+
 // 0x0X
 const BRK_IMPL: u8 = 0x00;
 const ORA_X_IND: u8 = 0x01;
@@ -193,26 +195,6 @@ const STACK_SIZE: usize = STACK_END - STACK_BEGIN;
 const GENERAL_PURPOSE_BEGIN: usize = 0x0200;
 const GENERAL_PURPOSE_END: usize = 0xFFFF;
 const GENERAL_PURPOSE_SIZE: usize = GENERAL_PURPOSE_END - GENERAL_PURPOSE_BEGIN;
-
-fn clear_bit(u: &mut u8, bit: u8, set: bool) {
-    *u &= !(0b00000001 << bit);
-}
-
-fn set_bit(u: &mut u8, bit: u8, set: bool) -> () {
-    *u |= 0b00000001 << bit;
-}
-
-fn check_bit(u: u8, bit: u8) -> bool {
-    return ((u >> bit) & 0b00000001) == 1;
-}
-
-fn toggle_bit(u: &mut u8, bit: u8, set: bool) -> () {
-    if set {
-        set_bit(u, bit, set);
-    } else {
-        clear_bit(u, bit, set);
-    }
-}
 
 #[derive(Default)]
 pub struct CPU {
@@ -555,7 +537,10 @@ impl CPU {
             LSR_ABS_X => {},
     
             // OR WITH ACCUMULATOR
-            ORA_X_IND => {},
+            ORA_X_IND => {
+
+                self.bytes_cycles += 6;
+            },
             ORA_ZPG => {},
             ORA_IMM => {},
             ORA_ABS => {},
