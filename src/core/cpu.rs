@@ -181,15 +181,24 @@ const SBC_ABS_Y: u8 = 0xF9;
 const SBC_ABS_X: u8 = 0xFD;
 const INC_ABS_X: u8 = 0xFE;
 
-const Z_PAGE_BEGIN: u8 = 0x0;
-const Z_PAGE_END: u8 = 0xFF;
-const Z_PAGE_SIZE: u8 = Z_PAGE_END - Z_PAGE_BEGIN;
+fn clear_bit(u: &mut u8, bit: u8, set: bool) {
+    *u &= !(0b00000001 << bit);
+}
 
-struct Instruction {
-    name: String,
-    opcode: u8,
-    addr_mod: u8,
-    cycles: u8,
+fn set_bit(u: &mut u8, bit: u8, set: bool) -> () {
+    *u |= 0b00000001 << bit;
+}
+
+fn check_bit(u: u8, bit: u8) -> bool {
+    return ((u >> bit) & 0b00000001) == 1;
+}
+
+fn toggle_bit(u: &mut u8, bit: u8, set: bool) -> () {
+    if set {
+        set_bit(u, bit, set);
+    } else {
+        clear_bit(u, bit, set);
+    }
 }
 
 #[derive(Default)]
