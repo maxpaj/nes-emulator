@@ -198,7 +198,7 @@ pub struct CPU {
     ac: u8,
     x: u8,
     y: u8,
-    cycles: u32,
+    bytes_cycles: u32,
 
     /// Status register, most commonly used flags are C, Z, V, S.
     /// - N = Negative/sign
@@ -220,9 +220,9 @@ impl CPU {
             ac: 0x00, 
             x: 0x00, 
             y: 0x00, 
-            cycles: 0, 
-            status_register: 0b00000000, 
-            stack_pointer: 0x00 
+            bytes_cycles: 0, 
+            status_register: 0b00110000, 
+            stack_pointer: 0xFD 
         }
     }
 
