@@ -459,7 +459,8 @@ impl CPU {
             // BREAK / INTERRUPT
             BRK_IMPL => {
                 ram[self.stack_pointer as usize] = (self.pc + 2) as u8;
-                self.stack_pointer + 1;
+                self.stack_pointer += 1;
+                self.set_break_flag(true);
             }
     
             // CLEAR
