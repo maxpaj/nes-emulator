@@ -226,14 +226,32 @@ impl CPU {
         }
     }
 
-    pub fn reset (&mut self) {
-        self.pc = 0x0000;
-        self.ac = 0x00;
-        self.x = 0x00;
-        self.y = 0x00;
-        self.status_register = 0b00000000;
-        self.stack_pointer = 0x00;
-        self.cycles = 0;
+    fn set_negative_flag(&mut self, value: bool) -> () {
+       toggle_bit(&mut self.status_register, 7, value);
+    }
+
+    fn set_overflow_flag(&mut self, value: bool) -> () {
+       toggle_bit(&mut self.status_register, 6, value);
+    }
+
+    fn set_break_flag(&mut self, value: bool) -> () {
+       toggle_bit(&mut self.status_register, 4, value);
+    }
+
+    fn set_decimal_flag(&mut self, value: bool) -> () {
+        toggle_bit(&mut self.status_register, 3, value);
+    }
+
+    fn set_interrupt_flag(&mut self, value: bool) -> () {
+       toggle_bit(&mut self.status_register, 2, value);
+    }
+
+    fn set_zero_flag(&mut self, value: bool) -> () {
+        toggle_bit(&mut self.status_register, 1, value);
+    }
+
+    fn set_carry_flag(&mut self, set: bool) -> () {
+        toggle_bit(&mut self.status_register, 0, set);
     }
 
     pub fn execute_one(&mut self, prg: Vec<u8>, ram: &mut Vec<u8>) {
