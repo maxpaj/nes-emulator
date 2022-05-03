@@ -1,4 +1,4 @@
-use crate::libs::bit::toggle_bit;
+use crate::libs::bit::{toggle_bit, check_bit};
 
 // 0x0X
 const BRK_IMPL: u8 = 0x00;
@@ -266,7 +266,16 @@ impl CPU {
         toggle_bit(&mut self.status_register, CARRY_FLAG_INDEX, set);
     }
 
-    pub fn execute_one(&mut self, prg: Vec<u8>, ram: &mut Vec<u8>) {
+    pub fn run(&mut self, prg: &Vec<u8>, ram: &mut Vec<u8>){
+        // Boot sequence
+        self.set_break_flag(false);
+
+        while !check_bit(self.status_register, BREAK_FLAG_INDEX) {
+            self.execute_one(prg, ram);
+        }
+    }
+
+    pub fn execute_one(&mut self, prg: &Vec<u8>, ram: &mut Vec<u8>) {
         // Why is it illegal to index a vec of u8 with a u16? 
         // Why wouldn't it be possible to have a vec of a length that exceeds u16?
         //
