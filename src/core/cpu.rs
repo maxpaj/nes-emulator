@@ -410,7 +410,9 @@ pub struct CPU {
     /// - Z = Zero
     /// - C = Carry
     status_register: u8,
-    stack_pointer: u8
+    stack_pointer: u8,
+
+    memory: Vec<u8>
 }
 
 impl CPU {
@@ -422,7 +424,8 @@ impl CPU {
             y: 0x00, 
             bytes_cycles: 0, 
             status_register: 0b00110000, 
-            stack_pointer: 0xFD 
+            stack_pointer: 0xFD,
+            memory: vec![0; 0xFFFF]
         }
     }
 
@@ -480,12 +483,16 @@ impl CPU {
         // Boot sequence
         self.set_break_flag(false);
 
+        // Map ROM program onto RAM
+        self.memory = self.get_memory_mapped(rom);
         while !check_bit(self.status_register, BREAK_FLAG_INDEX) {
-            self.execute_one(prg, ram);
+            }
+
+            self.execute_one();
         }
     }
 
-    pub fn execute_one(&mut self, prg: &Vec<u8>, ram: &mut Vec<u8>) {
+    pub fn execute_one(&mut self) {
         // Why is it illegal to index a vec of u8 with a u16? 
         // Why wouldn't it be possible to have a vec of a length that exceeds u16?
         //
@@ -494,9 +501,9 @@ impl CPU {
         // 8 bytes = 64 bits, 2^64 = 18,446,744,073,709,551,616 =~ lost of RAM
         //
         // So, casting a u8 (8 bits) or a u16 (16 bits) to usize (32 or 64 bits) should be safe
-        let instr: u8 = prg[self.pc as usize];
-        let pc: usize = self.pc as usize;
 
+        let instr: u8 = self.memory[self.pc as usize];
+        let pc: usize = self.pc as usize;
 
         // Addressing modes
         // ------------------------
@@ -518,9 +525,9 @@ impl CPU {
         match instr {
             // ADD WITH CARRY
             ADC_X_IND => {
-                let inst_val = prg[pc + 1];
+                let inst_val = self.memory[pc + 1];
                 let calc_addr = self.x + inst_val;
-                let value = ram[calc_addr as usize];
+                let value = self.memory[calc_addr as usize];
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
     
@@ -533,9 +540,9 @@ impl CPU {
             }
             ADC_ZPG => {
                 // Use the value from a relative address inside Z-page
-                let inst_val = prg[pc + 1];
+                let inst_val = self.memory[pc + 1];
                 let calc_addr = Z_PAGE_BEGIN as u8 + inst_val % Z_PAGE_SIZE as u8;
-                let value = ram[calc_addr as usize];
+                let value = self.memory[calc_addr as usize];
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
 
@@ -547,7 +554,7 @@ impl CPU {
                 self.pc += 2;
             },
             ADC_IMM => {
-                let inst_val = prg[pc + 1];
+                let inst_val = self.memory[pc + 1];
                 let value = inst_val;
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
@@ -560,9 +567,9 @@ impl CPU {
                 self.pc += 2;
             },
             ADC_ABS => {
-                let inst_val = prg[pc + 1] + prg[pc + 2];
+                let inst_val = self.memory[pc + 1] + self.memory[pc + 2];
                 let calc_addr = inst_val;
-                let value = ram[calc_addr as usize];
+                let value = self.memory[calc_addr as usize];
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
 
@@ -574,9 +581,9 @@ impl CPU {
                 self.pc += 3;
             },
             ADC_IND_Y => {
-                let inst_val = prg[pc + 1];
+                let inst_val = self.memory[pc + 1];
                 let calc_addr = self.y + inst_val;
-                let value = ram[calc_addr as usize];
+                let value = self.memory[calc_addr as usize];
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
     
@@ -590,9 +597,9 @@ impl CPU {
                 self.pc += 2;
             },
             ADC_ZPG_X => {
-                let inst_val = prg[pc + 1];
+                let inst_val = self.memory[pc + 1];
                 let calc_addr = Z_PAGE_BEGIN as u8 + inst_val % Z_PAGE_SIZE as u8 + self.x;
-                let value = ram[calc_addr as usize];
+                let value = self.memory[calc_addr as usize];
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
 
@@ -604,9 +611,9 @@ impl CPU {
                 self.pc += 2;
             },
             ADC_ABS_Y => {
-                let inst_val = prg[pc + 1] + prg[pc + 2];
+                let inst_val = self.memory[pc + 1] + self.memory[pc + 2];
                 let calc_addr = inst_val + self.y;
-                let value = ram[calc_addr as usize];
+                let value = self.memory[calc_addr as usize];
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
 
@@ -618,9 +625,9 @@ impl CPU {
                 self.pc += 3;
             },
             ADC_ABS_X => {
-                let inst_val = prg[pc + 1] + prg[pc + 2];
+                let inst_val = self.memory[pc + 1] + self.memory[pc + 2];
                 let calc_addr = inst_val + self.x;
-                let value = ram[calc_addr as usize];
+                let value = self.memory[calc_addr as usize];
                 let carry = self.status_register & 0b00000001;
                 let result: u16 = (value + carry).into();
 
@@ -667,7 +674,7 @@ impl CPU {
     
             // BREAK / INTERRUPT
             BRK_IMPL => {
-                ram[self.stack_pointer as usize] = (self.pc + 2) as u8;
+                self.memory[self.stack_pointer as usize] = (self.pc + 2) as u8;
                 self.stack_pointer += 1;
                 self.set_break_flag(true);
             }
@@ -724,10 +731,11 @@ impl CPU {
     
             // JUMP
             JMP_ABS => {
-                let first = prg[((self.pc + 1) as usize)] as u16;
-                let second = prg[((self.pc + 2) as usize)] as u16;
+                let first = self.memory[pc + 2] as u16;
+                let second = self.memory[pc + 1] as u16;
                 let address: u16 = (first << 8) | second;
                 self.pc = address;
+                self.bytes_cycles += 3;
             },
             JMP_IND => {},
     
@@ -746,8 +754,8 @@ impl CPU {
     
             // LOAD X
             LDX_ABS => {
-                let calc_addr = prg[pc + 1];
-                self.x = ram[calc_addr as usize];
+                let calc_addr = self.memory[pc + 1];
+                self.x = self.memory[calc_addr as usize];
             },
             LDX_ABS_Y => {},
             LDX_IMM => {},
@@ -888,12 +896,10 @@ mod cpu_tests {
     #[test]
     fn test_brk_impl() {
         let mut c = CPU::new();
-        let mut program = vec![0; 0xFF];
-        let mut ram = vec![0; 0xFFFF];
         c.status_register = 0b00000000;
 
-        program[0x00] = cpu::BRK_IMPL;
-        c.execute_one(program, &mut ram);
+        c.memory[0x4020] = cpu::BRK_IMPL;
+        c.execute_one();
 
         assert_eq!(c.status_register, 0b00010000);
         assert_eq!(c.stack_pointer, 0xFE);
@@ -902,9 +908,8 @@ mod cpu_tests {
     #[test]
     fn test_ora_x_ind() {
         let mut c = CPU::new();
-        let mut program = vec![0; 0xFF];
         let mut ram = vec![0; 0xFFFF];
 
-        program[0x0000] = ORA_ABS;
+        ram[0] = cpu::ORA_ABS;
     }
 }
