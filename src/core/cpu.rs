@@ -1,4 +1,8 @@
-use crate::libs::bit::{toggle_bit, check_bit};
+use crate::{libs::bit::{toggle_bit, check_bit}, core::debug::{to_hex_u16, to_hex_u8}};
+use std::{thread, time};
+use super::{rom::ROM, debug::print_bytes_table};
+
+const DEBUG: bool = true;
 
 // 0x0X
 const BRK_IMPL: u8 = 0x00;
