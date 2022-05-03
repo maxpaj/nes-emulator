@@ -480,15 +480,29 @@ impl CPU {
 
         return memory;
     }
+
+    pub fn run(&mut self, rom: ROM){
         // Boot sequence
         self.set_break_flag(false);
 
         // Map ROM program onto RAM
         self.memory = self.get_memory_mapped(rom);
+
+        // Set PC to contents at 0xFFFC - 0xFFFD
+        self.pc = 0xC000; // ((self.memory[0xFFFC] as u16) << 8) | self.memory[0x0FFFD] as u16;
+
+        // Interrupts take 7 cycles to complete
+        self.bytes_cycles = 7;
+
         while !check_bit(self.status_register, BREAK_FLAG_INDEX) {
+            if DEBUG {
+                self.print_debug();
             }
 
             self.execute_one();
+
+            let one_sec = time::Duration::from_millis(500);
+            thread::sleep(one_sec);
         }
     }
 
