@@ -196,6 +196,14 @@ const GENERAL_PURPOSE_BEGIN: usize = 0x0200;
 const GENERAL_PURPOSE_END: usize = 0xFFFF;
 const GENERAL_PURPOSE_SIZE: usize = GENERAL_PURPOSE_END - GENERAL_PURPOSE_BEGIN;
 
+const NEGATIVE_FLAG_INDEX: u8 = 7;
+const OVERFLOW_FLAG_INDEX: u8 = 6;
+const BREAK_FLAG_INDEX: u8 = 4;
+const DECIMAL_FLAG_INDEX: u8 = 3;
+const INTERRUPT_FLAG_INDEX: u8 = 2;
+const ZERO_FLAG_INDEX: u8 = 1;
+const CARRY_FLAG_INDEX: u8 = 0;
+
 #[derive(Default)]
 pub struct CPU {
     pc: u16,
@@ -231,31 +239,31 @@ impl CPU {
     }
 
     fn set_negative_flag(&mut self, value: bool) -> () {
-       toggle_bit(&mut self.status_register, 7, value);
+       toggle_bit(&mut self.status_register, NEGATIVE_FLAG_INDEX, value);
     }
 
     fn set_overflow_flag(&mut self, value: bool) -> () {
-       toggle_bit(&mut self.status_register, 6, value);
+       toggle_bit(&mut self.status_register, OVERFLOW_FLAG_INDEX, value);
     }
 
     fn set_break_flag(&mut self, value: bool) -> () {
-       toggle_bit(&mut self.status_register, 4, value);
+       toggle_bit(&mut self.status_register, BREAK_FLAG_INDEX, value);
     }
 
     fn set_decimal_flag(&mut self, value: bool) -> () {
-        toggle_bit(&mut self.status_register, 3, value);
+        toggle_bit(&mut self.status_register, DECIMAL_FLAG_INDEX, value);
     }
 
     fn set_interrupt_flag(&mut self, value: bool) -> () {
-       toggle_bit(&mut self.status_register, 2, value);
+       toggle_bit(&mut self.status_register, INTERRUPT_FLAG_INDEX, value);
     }
 
     fn set_zero_flag(&mut self, value: bool) -> () {
-        toggle_bit(&mut self.status_register, 1, value);
+        toggle_bit(&mut self.status_register, ZERO_FLAG_INDEX, value);
     }
 
     fn set_carry_flag(&mut self, set: bool) -> () {
-        toggle_bit(&mut self.status_register, 0, set);
+        toggle_bit(&mut self.status_register, CARRY_FLAG_INDEX, set);
     }
 
     pub fn execute_one(&mut self, prg: Vec<u8>, ram: &mut Vec<u8>) {
