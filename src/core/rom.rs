@@ -95,10 +95,10 @@ pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
         chr,
         program,
         trainer,
-        has_battery_backed_prg_ram: false,
-        has_four_screen_vram: false,
-        has_trainer: false,
-        mirroring_vertical: false
+        has_battery_backed_prg_ram,
+        has_four_screen_vram,
+        has_trainer,
+        mirroring_vertical
     };
 
     return Ok(rom);
