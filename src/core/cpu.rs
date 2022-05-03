@@ -266,7 +266,29 @@ impl CPU {
         toggle_bit(&mut self.status_register, CARRY_FLAG_INDEX, set);
     }
 
-    pub fn run(&mut self, prg: &Vec<u8>, ram: &mut Vec<u8>){
+    fn get_memory_mapped(&mut self, rom: ROM) -> Vec<u8> {
+        let mut memory = vec![0; 0xFFFF];
+
+        println!("Mapping memory with mapper {}", rom.mapper);
+
+        match rom.mapper {
+            0 => { 
+                // If the PRG ROM is larger than 16kb, copy data into 0x8000 - 0xFFFF, otherwise mirror the data
+                if rom.program.len() > 0x4000 {
+                    memory.splice(0x8000..0xBFFF, rom.program[0..0x4000].iter().cloned());
+                    memory.splice(0xC000..0xFFFF, rom.program[0x4000..rom.program.len()].iter().cloned());
+                } else {
+                    memory.splice(0x8000..0xBFFF, rom.program[0..rom.program.len()].iter().cloned());
+                    memory.splice(0xC000..0xFFFF, rom.program[0..rom.program.len()].iter().cloned());
+                }
+            }
+            n => {
+                panic!("Uknown mapper number {}", n);
+            }
+        }
+
+        return memory;
+    }
         // Boot sequence
         self.set_break_flag(false);
 
