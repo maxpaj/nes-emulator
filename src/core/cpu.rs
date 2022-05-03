@@ -513,7 +513,12 @@ impl CPU {
             INY_IMPL => {},
     
             // JUMP
-            JMP_ABS => {},
+            JMP_ABS => {
+                let first = prg[((self.pc + 1) as usize)] as u16;
+                let second = prg[((self.pc + 2) as usize)] as u16;
+                let address: u16 = (first << 8) | second;
+                self.pc = address;
+            },
             JMP_IND => {},
     
             // JUMP SUBROUTINE
