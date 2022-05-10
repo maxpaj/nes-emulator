@@ -1072,7 +1072,19 @@ mod cpu_tests {
         assert_eq!(c.status_register, 0b10000001);
 
         c.set_carry_flag(false);
-        assert_eq!(c.status_register, 0b10000000);
+
+    #[test]
+    fn test_stack() {
+        let mut c = CPU::new();
+
+        assert_eq!(c.stack_pointer, 0xFD);
+        c.push_stack(0xAA);
+
+        assert_eq!(c.stack_pointer, 0xFC);
+
+        let v = c.pop_stack();
+        assert_eq!(v, 0xAA);
+        assert_eq!(c.stack_pointer, 0xFD);
     }
 
     #[test]
