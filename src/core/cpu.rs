@@ -810,11 +810,22 @@ impl CPU {
             }
     
             // CLEAR
-            CLC_IMP => {},
-            CLD_IMPL => {},
-            CLI_IMPL => {},
-            CLV_IMPL => {},
-    
+            CLC_IMP => {
+                self.pc += 1;
+                self.set_carry_flag(false);
+            }
+            CLD_IMPL => {
+                self.pc += 1;
+                self.set_decimal_flag(false);
+            }
+            CLI_IMPL => {
+                self.pc += 1;
+                self.set_interrupt_flag(false);
+            }
+            CLV_IMPL => {
+                self.pc += 1;
+                self.set_overflow_flag(false);
+            }
             // COMPARE
             CMP_ABS => {},
             CMP_IMM => {},
