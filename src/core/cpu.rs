@@ -905,8 +905,19 @@ impl CPU {
             JMP_IND => {},
     
             // JUMP SUBROUTINE
-            JSR_ABS => {},
-    
+            JSR_ABS => {
+                // Push current PC to stack
+                self.push_stack(((pc >> 8) & 0x00FF) as u8);
+                self.push_stack((pc & 0xFF) as u8);
+
+                // Calculate next address
+                let first = self.memory[(pc + 2) as usize] as u16;
+                let second = self.memory[(pc + 1) as usize] as u16;
+                let address: u16 = (first << 8) | second;
+
+                self.pc = address;
+                self.bytes_cycles += 6;
+            }
             // LOAD ACCUMULATOR
             LDA_ABS => {},
             LDA_ABS_Y => {},
