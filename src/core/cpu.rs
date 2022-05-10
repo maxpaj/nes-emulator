@@ -945,15 +945,13 @@ impl CPU {
             ORA_X_IND => {
 
                 self.bytes_cycles += 6;
-            },
-            ORA_ZPG => {},
-            ORA_IMM => {},
-            ORA_ABS => {},
-            ORA_IND => {},
-            ORA_ZPG_X => {},
-            ORA_ABS_Y => {},
-            ORA_ABS_X => {},
-    
+            ORA_IMM => {
+                self.ac = self.ac | self.memory[pc + 1];
+                self.set_negative_flag((self.ac & 0b1000_0000) >> 7 == 1);
+                self.set_zero_flag(self.ac == 0);
+                self.pc += 2;
+                self.bytes_cycles += 2;
+            }
             // ROTATE LEFT
             ROL_A => {},
             ROL_ABS => {},
