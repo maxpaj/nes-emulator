@@ -795,9 +795,18 @@ impl CPU {
             }
             // BREAK / INTERRUPT
             BRK_IMPL => {
-                self.memory[self.stack_pointer as usize] = (self.pc + 2) as u8;
-                self.stack_pointer += 1;
+                // Push return address
+                let return_address = self.pc + 2;
+                self.push_stack((return_address >> 8) as u8 & 0xFF);
+                self.push_stack(return_address as u8 & 0xFF);
+
+                // Push status register with interrupt flag set
                 self.set_break_flag(true);
+
+                self.push_stack(self.status_register | 0b0000_1000);
+
+                self.pc += 1;
+                self.bytes_cycles += 7;
             }
     
             // CLEAR
