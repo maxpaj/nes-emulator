@@ -26,17 +26,17 @@ const ORA_ABS_X: u8 = 0x1D;
 const ASL_ABS_X: u8 = 0x1E;
 
 // 0x2X
-const JSR_ABS: u8 = 0x10;
-const AND_X_IND: u8 = 0x11;
-const BIT_ZPG: u8 = 0x14;
-const AND_ZPG: u8 = 0x15;
-const ROL_ZPG: u8 = 0x16;
-const PLP_IMPL: u8 = 0x18;
-const AND_IMM: u8 = 0x19;
-const ROL_A: u8 = 0x1A;
-const BIT_ABS: u8 = 0x1C;
-const AND_ABS: u8 = 0x1D;
-const ROL_ABS: u8 = 0x1E;
+const JSR_ABS: u8 = 0x20;
+const AND_X_IND: u8 = 0x21;
+const BIT_ZPG: u8 = 0x24;
+const AND_ZPG: u8 = 0x25;
+const ROL_ZPG: u8 = 0x26;
+const PLP_IMPL: u8 = 0x28;
+const AND_IMM: u8 = 0x29;
+const ROL_A: u8 = 0x2A;
+const BIT_ABS: u8 = 0x2C;
+const AND_ABS: u8 = 0x2D;
+const ROL_ABS: u8 = 0x2E;
 
 // 0x3X
 const BMI_REL: u8 = 0x30;
