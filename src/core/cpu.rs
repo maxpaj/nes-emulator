@@ -405,11 +405,14 @@ pub struct CPU {
     bytes_cycles: u32,
 
     /// Status register, most commonly used flags are C, Z, V, S.
+    ///
+    /// From highest to lowest bit:
     /// - N = Negative/sign
     /// - V = Overflow
-    /// - _ = (unused)
-    /// - B = Break
-    /// - D = Decimal (use BCD for arithmetics)
+    /// - _ = (unused) (no CPU effect, only for indicating how stack was pushed)
+    /// - B = Break    (no CPU effect, only for indicating how stack was pushed)
+    ///
+    /// - D = Decimal  (on the NES this has no effect, use BCD for arithmetics)
     /// - I = Interrupt (IRQ disable)
     /// - Z = Zero
     /// - C = Carry
