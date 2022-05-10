@@ -851,19 +851,16 @@ impl CPU {
                 self.set_overflow_flag(false);
             }
             // COMPARE
-            CMP_ABS => {},
-            CMP_IMM => {},
-            CMP_ZPG => {},
-            CMP_ABS_X => {},
-            CMP_ABS_Y => {},
-            CMP_IND_Y => {},
-            CMP_X_IND => {},
-            CMP_ZPG_X => {},
-    
-            CPX_IMM => {},
-            CPX_ZPG => {},
-            CPX_ABS => {},
-    
+            CMP_IMM => {
+                let result: i16 = self.ac as i16 - self.memory[pc + 1] as i16;
+
+                // TODO: Set the carry flag here ... how?
+                self.set_carry_flag(result >= 0);
+                self.set_zero_flag(result == 0);
+                self.set_negative_flag(((0b1000_0000 & result) >> 7) == 1);
+                self.pc += 2;
+                self.bytes_cycles += 2;
+            }
             CPY_IMM => {},
             CPY_ZPG => {},
             CPY_ABS => {},
