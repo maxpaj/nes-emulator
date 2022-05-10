@@ -594,16 +594,40 @@ impl CPU {
             ADC_IMM => {
                 let inst_val = self.memory[pc + 1];
                 let value = inst_val;
-                let carry = self.status_register & 0b00000001;
-                let result: u16 = (value + carry).into();
+                let carry = self.status_register & 0b0000_0001;
+                let result: u16 = (self.ac + value + carry).into();
+
+                eprintln!(
+                    "{} SR {} Carry {} value {} ac {} = Result {}",
+                    to_hex_u16(self.pc),
+                    to_binary_u8(self.status_register),
+                    carry,
+                    value,
+                    self.ac,
+                    result
+                );
+
+                // If both are positive and we end up with a negative number, we've overflowed
+                let positive_overflow = value & 0b1000_0000 >> 7 == 0
+                    && self.ac & 0b1000_0000 >> 7 == 0
+                    && result & 0b1000_0000 >> 7 == 1;
+
+                // If both are negative and we end up with a positive number, we've overflowed
+                let negative_overflow = value & 0b1000_0000 >> 7 == 1
+                    && self.ac & 0b1000_0000 >> 7 == 1
+                    && result & 0b1000_0000 >> 7 == 0;
+
+                let overflow = negative_overflow || positive_overflow;
 
                 self.ac = result as u8;
                 self.set_zero_flag(self.ac == 0);
-                self.set_overflow_flag(result > 0xFF);
+                self.set_overflow_flag(overflow);
+                self.set_negative_flag((self.ac & 0b1000_0000) >> 7 == 1);
+                self.set_carry_flag((result & 0b1_0000_0000) >> 7 == 1);
 
                 self.bytes_cycles += 2;
                 self.pc += 2;
-            },
+            }
             ADC_ABS => {
                 let inst_val = self.memory[pc + 1] + self.memory[pc + 2];
                 let calc_addr = inst_val;
