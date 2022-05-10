@@ -460,6 +460,10 @@ impl CPU {
         toggle_bit(&mut self.status_register, ZERO_FLAG_INDEX, value);
     }
 
+    // When the addition result is 0 to 255, the carry is cleared.
+    // When the addition result is greater than 255, the carry is set.
+    // When the subtraction result is 0 to 255, the carry is set.
+    // When the subtraction result is less than 0, the carry is cleared.
     fn set_carry_flag(&mut self, set: bool) -> () {
         toggle_bit(&mut self.status_register, CARRY_FLAG_INDEX, set);
     }
