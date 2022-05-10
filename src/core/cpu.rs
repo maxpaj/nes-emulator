@@ -1024,6 +1024,38 @@ impl CPU {
             _ => println!("({:x}) Missing instruction", instr),
         }
     }
+
+    pub fn print_debug(&self) {
+        let pc = self.pc as usize;
+        let current_instr = self.memory[self.pc as usize];
+
+        println!("{pc}  {instr_number:0>width$}  {instr:<instr_width$} A:{a:0>width$} X:{x:0>width$} Y:{y:0>width$} P:{sr:>width$} ({sr_binary}) SP:{sp:>width$} PPU:{ppuX:>width$},{ppuY:>width$} CYC:{cyc}", 
+            pc=to_hex_u16(self.pc),
+            instr_number=to_hex_u8(current_instr),
+            instr=get_instruction_name(self.memory[pc]),
+            a=to_hex_u8(self.ac),
+            x=to_hex_u8(self.x),
+            y=to_hex_u8(self.y),
+            sr=to_hex_u8(self.status_register),
+            sr_binary=to_binary_u8(self.status_register),
+            sp=to_hex_u8(self.stack_pointer),
+            cyc=self.bytes_cycles,
+            ppuX=0,
+            ppuY=0,
+            width=2,
+            instr_width=30
+        );
+    }
+
+    pub fn print_debug_stack(&self) {
+        let range = (STACK_BEGIN + self.stack_pointer as usize)..STACK_END;
+        eprintln!("STACK (size {}) ", range.len());
+        self.print_debug_memory(STACK_BEGIN + self.stack_pointer as usize, STACK_END - 1);
+    }
+
+    pub fn print_debug_memory(&self, start: usize, end: usize) {
+        print_bytes_table(&self.memory, start, end, 8);
+    }
 }
 
 #[cfg(test)]
