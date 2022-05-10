@@ -701,15 +701,98 @@ impl CPU {
             // BRANCH
             // add 1 to cycles if branch occurs on same page   
             // add 2 to cycles if branch occurs to different page
-            BCC_REL => {},
-            BCS_REL => {},
-            BEQ_REL => {},
-            BMI_REL => {},
-            BNE_REL => {},
-            BPL_REL => {},
-            BVS_REL => {},
-            BVC_REL => {},
-    
+            BCC_REL => {
+                let carry_set = self.status_register & 0b0000_0001 == 1;
+                let same_page = true;
+
+                if !carry_set {
+                    let address = pc + 1;
+                    // Offset address is a signed 8-bit
+                    let value = self.memory[address as usize] as i8;
+                    let pc_i16 = (pc as i16) + (value as i16);
+                    self.pc = pc_i16 as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
+            BCS_REL => {
+                let carry_set = self.status_register & 0b0000_0001 == 1;
+                let same_page = true;
+
+                if carry_set {
+                    self.pc += self.memory[pc + 1] as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
+            BEQ_REL => {
+                let zero_set = (self.status_register & 0b0000_0010) >> 1 == 1;
+                let same_page = true;
+
+                if zero_set {
+                    self.pc += self.memory[pc + 1] as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
+            BMI_REL => {
+                let negative_set = (self.status_register & 0b1000_0000) >> 7 == 1;
+                let same_page = true;
+
+                if negative_set {
+                    self.pc += self.memory[pc + 1] as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
+            BNE_REL => {
+                let zero_set = (self.status_register & 0b0000_0010) >> 1 == 1;
+                let same_page = true;
+
+                if !zero_set {
+                    self.pc += self.memory[pc + 1] as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
+            BPL_REL => {
+                let negative_set = (self.status_register & 0b1000_0000) >> 7 == 1;
+                let same_page = true;
+
+                if !negative_set {
+                    self.pc += self.memory[pc + 1] as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
+            BVS_REL => {
+                let overflow_set = (self.status_register & 0b0100_0000) >> 6 == 1;
+                let same_page = true;
+
+                if overflow_set {
+                    self.pc += self.memory[pc + 1] as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
+            BVC_REL => {
+                let overflow_set = (self.status_register & 0b0100_0000) >> 6 == 1;
+                let same_page = true;
+
+                if !overflow_set {
+                    self.pc += self.memory[pc + 1] as u16;
+                }
+
+                self.pc += 2;
+                self.bytes_cycles += if same_page { 1 } else { 2 };
+            }
             // BREAK / INTERRUPT
             BRK_IMPL => {
                 self.memory[self.stack_pointer as usize] = (self.pc + 2) as u8;
