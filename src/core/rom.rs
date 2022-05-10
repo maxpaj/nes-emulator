@@ -1,8 +1,6 @@
-use std::fs;
 use std::error::Error;
 use std::fmt;
-
-use crate::core::debug::print_bytes_table;
+use std::fs;
 
 #[derive(Debug)]
 pub struct ROM {
@@ -37,23 +35,25 @@ pub struct ROM {
     ///
     /// What is this used for?
     ///
-    pub has_four_screen_vram: bool
+    pub has_four_screen_vram: bool,
 }
 
 #[derive(Debug)]
 pub struct FormatParseError {
-    details: String
+    details: String,
 }
 
 impl FormatParseError {
     fn new(msg: &str) -> FormatParseError {
-        FormatParseError {details: msg.to_string()}
+        FormatParseError {
+            details: msg.to_string(),
+        }
     }
 }
 
 impl fmt::Display for FormatParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,"{}",self.details)
+        write!(f, "{}", self.details)
     }
 }
 
@@ -66,17 +66,13 @@ impl Error for FormatParseError {
 pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
     let file_bytes = fs::read(file_path).expect("Unable to read file");
 
-    println!("Reading ROM file with {} bytes", file_bytes.len());
+    eprintln!("Reading ROM file with {} bytes", file_bytes.len());
 
     // 16 bytes header
     let header = file_bytes[0..0x10].to_vec();
 
     // header should start with "NES" followed by MS-DOS end-of-file
-    if  header[0] != 0x4E ||
-        header[1] != 0x45 ||
-        header[2] != 0x53 ||
-        header[3] != 0x1A
-    {
+    if header[0] != 0x4E || header[1] != 0x45 || header[2] != 0x53 || header[3] != 0x1A {
         return Err(FormatParseError::new("Not NES format file."));
     }
 
@@ -86,7 +82,7 @@ pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
     let has_battery_backed_prg_ram = flags_6 & 0b00000010 > 0;
     let has_trainer = flags_6 & 0b00000100 > 0;
     let has_four_screen_vram = flags_6 & 0b00001000 > 0;
-    
+
     // Mapper
     let flags_7 = header[7];
     let mapper_lo = flags_6 & 0b11110000;
@@ -97,22 +93,24 @@ pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
     let trainer_size = if has_trainer { 0x200 } else { 0 };
     let trainer_byte_range = 0x10..(0x10 + trainer_size);
     let trainer = file_bytes[trainer_byte_range.clone()].to_vec();
-    println!("Read trainer size {} bytes", trainer.len());
+    eprintln!("Read trainer size {} bytes", trainer.len());
 
     // 0x4000 * program_size bytes program
     let program_size = (header[4] as u16 * 0x4000) as usize;
     let program_byte_range = trainer_byte_range.end..(&trainer_byte_range.end + program_size);
     let program = file_bytes[program_byte_range.clone()].to_vec();
-    println!("Read program size {} bytes", program.len());
-    print_bytes_table(&program, 0x00, 0xFF, 8);
+    eprintln!("Read program size {} bytes", program.len());
 
     // 0x2000 * chr_size bytes tile map
     let chr_size = (header[5] as u16 * 0x2000) as usize;
     let chr_byte_range = program_byte_range.end..(&program_byte_range.end + chr_size);
     let chr = file_bytes[chr_byte_range.clone()].to_vec();
-    println!("Read chr size {} bytes", chr.len());
+    eprintln!("Read chr size {} bytes", chr.len());
 
-    println!("ROM total headers size {} bytes", chr_size + program_size + trainer_size);
+    eprintln!(
+        "ROM total headers size {} bytes",
+        chr_size + program_size + trainer_size
+    );
 
     let rom = ROM {
         header,
@@ -126,7 +124,7 @@ pub fn read_rom_from_file(file_path: String) -> Result<ROM, FormatParseError> {
         has_battery_backed_prg_ram,
         has_four_screen_vram,
         has_trainer,
-        mirroring_vertical
+        mirroring_vertical,
     };
 
     return Ok(rom);
