@@ -718,10 +718,20 @@ impl CPU {
             ASL_ZPG => {},
             ASL_ZPG_X => {},
     
-            // BIT
-            BIT_ZPG => {},
-            BIT_ABS => {},
-    
+            // Test Bits in Memory with Accumulator
+            BIT_ZPG => {
+                let address = Z_PAGE_BEGIN + (self.memory[pc + 1] as usize) % Z_PAGE_SIZE;
+                let value = self.memory[address];
+                let negative = ((0b1000_0000 & value) >> 7) == 1;
+                let overflow = ((0b0100_0000 & value) >> 6) == 1;
+
+                self.set_zero_flag((self.ac & value) == 0);
+                self.set_negative_flag(negative);
+                self.set_overflow_flag(overflow);
+
+                self.pc += 2;
+                self.bytes_cycles += 3;
+            }
             // BRANCH
             // add 1 to cycles if branch occurs on same page   
             // add 2 to cycles if branch occurs to different page
