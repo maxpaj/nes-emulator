@@ -468,6 +468,19 @@ impl CPU {
         toggle_bit(&mut self.status_register, CARRY_FLAG_INDEX, set);
     }
 
+    fn push_stack(&mut self, value: u8) -> () {
+        self.memory[0x100 + self.stack_pointer as usize] = value;
+        self.stack_pointer -= 1;
+    }
+
+    fn pop_stack(&mut self) -> u8 {
+        self.stack_pointer += 1;
+
+        let stack_address = 0x100 + (self.stack_pointer) as usize;
+        let value = self.memory[stack_address];
+
+        return value;
+    }
     fn get_memory_mapped(&mut self, rom: ROM) -> Vec<u8> {
         let mut memory = vec![0; 0xFFFF];
 
