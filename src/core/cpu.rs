@@ -945,13 +945,33 @@ impl CPU {
             ROR_ZPG => {},
     
             // PUSH
-            PHA_IMPL => {},
-            PHP_IMPL => {},
-    
+            PHA_IMPL => {
+                self.push_stack(self.ac);
+                self.pc += 1;
+                self.bytes_cycles += 3;
+            }
+            PHP_IMPL => {
+                // Push the status register with the "B-flag" set, to distinguish how the status register was pushed
+                self.push_stack(self.status_register | 0b0011_0000);
+                self.pc += 1;
+                self.bytes_cycles += 3;
+            }
+
             // PULL
-            PLA_IMPL => {},
-            PLP_IMPL => {},
-    
+            PLA_IMPL => {
+                self.ac = self.pop_stack();
+                self.set_zero_flag(self.ac == 0);
+                self.set_negative_flag(((0b1000_0000 & self.ac) >> 7) == 1);
+                self.pc += 1;
+                self.bytes_cycles += 4;
+            }
+            PLP_IMPL => {
+                // Ignore bits 5 and 4
+                self.status_register =
+                    (self.pop_stack() & 0b1100_1111) | (self.status_register & 0b0011_0000);
+                self.pc += 1;
+                self.bytes_cycles += 4;
+            }
             // RETURN
             RTI_IMPL => {},
             RTS_IMPL => {},
